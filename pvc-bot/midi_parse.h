@@ -2,12 +2,28 @@
  *  
  *  @author Tanuj Sane
  */
+#pragma once // guard
+
+ // command bytes
 #define NOTE_OFF 0x10
 #define NOTE_ON 0x90
 #define AFTERTOUCH 0xA0
-#define CMD 0xF0
+#define USER_CMD 0xF0
 
-void midi_in(){
+// note bytes
+enum NOTES {
   
-}
+};
+
+// velocity bytes
+#define NOTE_VEL 100 // TODO: Find that value or ignore completely
+
+void init_timer();
+void midi_parse();
+ISR(TIMER1_COMPA_vect);
+
+
+
+
+
 
