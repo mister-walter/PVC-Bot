@@ -1,12 +1,15 @@
-/** midi_parse.cpp - Library for parsing MIDI input over serial
+/** midi_2_music.cpp - Library for parsing MIDI input over serial and controlling actuators
  *  
  *  @author Tanuj Sane
  */
 
 #include <Arduino.h>
-#include "midi_parse.h"
+#include "midi_2_music.h"
 
-byte cmd, pitch, vel;
+byte cmd, pitch;
+byte off; // velocity replaced by on or off flag
+
+int row12, row13;
 
 void init_timer()
 {
@@ -30,16 +33,15 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
     if(Serial.available()){
       cmd = Serial.read();
       pitch = Serial.read();
-      vel = Serial.read();
+      off = Serial.read();
     }
   }
   while (Serial.available() > 2); // at least 3 bytes available
 }
 
-void midi_parse(byte cmd){
+byte midi_parse(){
   switch(cmd){
     case NOTE_ON:
-      
     break;
 
     case NOTE_OFF:
@@ -52,4 +54,37 @@ void midi_parse(byte cmd){
     break;
   }
 }
+
+void set(int b){
+  int i = 0x800;
+  while(i){
+    if(b & i) PORTB |= 1;
+    else PORTB &= ~(1);
+    PORTD |= 1 << CLK;
+    i >>= 1;
+    PORTD &= ~(1 << CLK);
+  }
+  PORTD |= 1 << EN;
+  delay(1);
+  PORTD &= ~(1 << EN);
+  delay(1);
+  PORTD &= ~(1 << RST);
+  delay(1);
+  PORTD |= 1 << RST;
+}
+
+void clear(){
+  PORTD |= 1 << EN;
+  delay(1);
+  PORTD &= ~(1 << EN);
+}
+
+void config(){
+  DDRD |= 1 << CLK;
+  DDRD |= 1 << EN;
+  DDRD |= 1 << RST;
+  DDRB |= 1 << S1;
+  PORTD |= 1 << RST;
+}
+
 
