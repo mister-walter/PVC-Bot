@@ -2,48 +2,68 @@
  *  @author Tanuj Sane
  */
 
-// circuit driver constants
 #define CLK 5
 #define EN  6
 #define RST 7
 #define S1  0
-
- // command bytes //TODO: SET CHANNEL USING LOW-ORDER NIBBLE
-#define NOTE_OFF 0x10
-#define NOTE_ON 0x90
+#define MAX_MSG 3
+#define BAUD_RATE 9600
 
 // Function declarations
 void init_timer();
 void play_note();
-void _do_nothing();
 void set(int b);
 void clear();
 void config();
+byte hexify(String buf[], int size);
+
+#define START 0x01
+#define STOP 0x02
 
 // variables
-byte cmd, pitch;
-byte off; // velocity replaced by on or off flag
-
-int t12 = 0x0001; int t13 = 0x0001;
+byte serial_in = 0x00;
+byte pitch, vel;
 
 void setup() {
+  Serial.begin(BAUD_RATE);
+  Serial.flush();
   init_timer();
+  config();
   clear();
 }
 
 void loop() {
-  
+  if (Serial.available()) serial_in = Serial.read();
+  switch(serial_in){
+    case START:
+      pitch = Serial.read() - '0';
+      vel = Serial.read() - '0';
+    break;
+    
+    case STOP: default:
+      pitch = 0x00;
+      vel = 0x00;
+    break;
+ }
+
+  play_note(pitch, vel);
+}
+
+void play_note(byte pitch, byte vel){
+  if(pitch < 48) set(1 << (pitch - 36));
+  else if(pitch < 60) set(1 << (pitch - 48));
+  else ;
+  OCR1A = 9600; /* TODO: Some math here for vel -> volume calculation */
 }
 
 void init_timer()
 {
-  Serial.begin(31250);
   // initialize timer1 
   cli(); // clear interrupts           
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1  = 0;
-  OCR1A = 31250; // fire interrupt at same frequency as Serial
+  OCR1A = BAUD_RATE; // fire interrupt at same frequency as Serial
   TCCR1B |= (1 << WGM12); 
   TCCR1B |= (1 << CS12); 
   TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
@@ -52,36 +72,18 @@ void init_timer()
 
 ISR(TIMER1_COMPA_vect) // timer compare interrupt service routine
 {
-  do{
-    if(Serial.available()){
-      cmd = Serial.read();
-      pitch = Serial.read();
-      off = Serial.read();
-    }
-  }
-  while (Serial.available() > 2); // at least 3 bytes available
-}
-
-void play_note(){
-  switch(cmd){
-    case NOTE_ON:
-      if(pitch < 48) set(1 << (pitch - 36));
-      else if (pitch < 61) set(1 << (pitch - 48));
-      else;
-    break;
-
-    case NOTE_OFF:
-        _do_nothing();
-    break;
-  }
-}
-
-void _do_nothing(){
-  return;
+  
 }
 
 void set(int b){
-  PORTB |= b;
+  int i = 0x800;
+  while(i){
+    if(b & i) PORTB |= 1;
+    else PORTB &= ~(1);
+    PORTD |= 1 << CLK;
+    i >>= 1;
+    PORTD &= ~(1 << CLK);
+  }
   PORTD |= 1 << EN;
   delay(1);
   PORTD &= ~(1 << EN);
