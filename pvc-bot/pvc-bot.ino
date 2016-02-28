@@ -15,7 +15,6 @@ void play_note();
 void set(int b);
 void clear();
 void config();
-byte hexify(String buf[], int size);
 
 #define START 0x01
 #define STOP 0x02
