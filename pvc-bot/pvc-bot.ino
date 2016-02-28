@@ -50,8 +50,8 @@ void loop() {
 }
 
 void play_note(byte pitch, byte vel){
-  if(pitch < 48) set(1 << (pitch - 36));
-  else if(pitch < 60) set(1 << (pitch - 48));
+  if(pitch < 60) set(1 << (pitch - 48));
+  else if(pitch < 72) set(1 << (pitch - 60));
   else ;
   OCR1A = 9600; /* TODO: Some math here for vel -> volume calculation */
 }
