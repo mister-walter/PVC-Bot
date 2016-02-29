@@ -9,6 +9,9 @@
 #define MAX_MSG 3
 #define BAUD_RATE 9600
 
+#define START 1
+#define STOP 2
+
 // Function declarations
 void init_timer();
 void play_note();
@@ -16,43 +19,40 @@ void set(int b);
 void clear();
 void config();
 
-#define START 0x01
-#define STOP 0x02
-
 // variables
-byte serial_in = 0x00;
-byte pitch, vel;
+byte serial_in;
+int pitch, vel;
 
 void setup() {
   Serial.begin(BAUD_RATE);
   Serial.flush();
+  pinMode(13, OUTPUT);
   init_timer();
   config();
   clear();
 }
 
 void loop() {
-  if (Serial.available()) serial_in = Serial.read();
-  switch(serial_in){
-    case START:
-      pitch = Serial.read() - '0';
-      vel = Serial.read() - '0';
-    break;
-    
-    case STOP: default:
-      pitch = 0x00;
-      vel = 0x00;
-    break;
- }
-
-  play_note(pitch, vel);
+  if (Serial.available() > 3){
+    serial_in = Serial.read();
+    switch(serial_in){
+      case START:
+        pitch = Serial.read();
+        vel = Serial.read();
+      break;
+      
+      case STOP:
+        play_note(pitch, vel);
+      break;
+    }
+  }    
 }
 
 void play_note(byte pitch, byte vel){
+  OCR1A = 9600; /* TODO: Some math here for vel -> volume calculation */
   if(pitch < 60) set(1 << (pitch - 48));
   else if(pitch < 72) set(1 << (pitch - 60));
-  else ;
-  OCR1A = 9600; /* TODO: Some math here for vel -> volume calculation */
+  else;
 }
 
 void init_timer()
@@ -69,8 +69,7 @@ void init_timer()
   sei(); // enable all interrupts
 }
 
-ISR(TIMER1_COMPA_vect) // timer compare interrupt service routine
-{
+ISR(TIMER1_COMPA_vect){
   
 }
 
