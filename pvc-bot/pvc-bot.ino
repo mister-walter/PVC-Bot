@@ -21,12 +21,10 @@ void config();
 
 // variables
 byte serial_in;
-int pitch, vel;
+int pitch, vel, set_val;
 
 void setup() {
   Serial.begin(BAUD_RATE);
-  Serial.flush();
-  pinMode(13, OUTPUT);
   init_timer();
   config();
   clear();
@@ -34,25 +32,27 @@ void setup() {
 
 void loop() {
   if (Serial.available() > 3){
-    serial_in = Serial.read();
-    switch(serial_in){
-      case START:
-        pitch = Serial.read();
-        vel = Serial.read();
-      break;
-      
-      case STOP:
+    if(Serial.peek() == START){
+      Serial.read(); // pop start byte
+      pitch = Serial.read();
+      vel = Serial.read();
+      if(Serial.peek() == STOP) {
+        Serial.read(); // pop stop byte to make it feel important
         play_note(pitch, vel);
-      break;
+      }
     }
   }    
 }
-
-void play_note(byte pitch, byte vel){
-  OCR1A = 9600; /* TODO: Some math here for vel -> volume calculation */
-  if(pitch < 60) set(1 << (pitch - 48));
-  else if(pitch < 72) set(1 << (pitch - 60));
-  else;
+void play_note(byte p, byte v){
+  OCR1A = 9600; /* TODO: Some math here for v -> volume calculation */
+  if(v == 0) return;
+  else{
+    if(p < 60) set_val = 1 << (p - 48);
+    else if(p < 72) set_val = 1 << (p - 60);
+    set(set_val);  
+    delay(5);
+    clear();
+  }
 }
 
 void init_timer()
@@ -62,7 +62,6 @@ void init_timer()
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1  = 0;
-  OCR1A = BAUD_RATE; // fire interrupt at same frequency as Serial
   TCCR1B |= (1 << WGM12); 
   TCCR1B |= (1 << CS12); 
   TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
