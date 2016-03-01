@@ -7,7 +7,7 @@
 #define RST 7
 #define S1  0
 #define MAX_MSG 3
-#define BAUD_RATE 9600
+#define BAUD_RATE 38400
 
 #define START 1
 #define STOP 2
@@ -25,7 +25,6 @@ int pitch, vel, set_val;
 
 void setup() {
   Serial.begin(BAUD_RATE);
-  init_timer();
   config();
   clear();
 }
@@ -44,32 +43,15 @@ void loop() {
   }    
 }
 void play_note(byte p, byte v){
-  OCR1A = 9600; /* TODO: Some math here for v -> volume calculation */
+  byte delay_time = map(v, 1, 100, 5, 25);
   if(v == 0) return;
   else{
     if(p < 60) set_val = 1 << (p - 48);
     else if(p < 72) set_val = 1 << (p - 60);
     set(set_val);  
-    delay(5);
+    delay(delay_time);
     clear();
   }
-}
-
-void init_timer()
-{
-  // initialize timer1 
-  cli(); // clear interrupts           
-  TCCR1A = 0;
-  TCCR1B = 0;
-  TCNT1  = 0;
-  TCCR1B |= (1 << WGM12); 
-  TCCR1B |= (1 << CS12); 
-  TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
-  sei(); // enable all interrupts
-}
-
-ISR(TIMER1_COMPA_vect){
-  
 }
 
 void set(int b){
