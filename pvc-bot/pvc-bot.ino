@@ -43,13 +43,12 @@ void loop() {
   }    
 }
 void play_note(byte p, byte v){
-  byte delay_time = map(v, 1, 100, 5, 25);
   if(v == 0) return;
   else{
     if(p < 60) set_val = 1 << (p - 48);
     else if(p < 72) set_val = 1 << (p - 60);
     set(set_val);  
-    delay(delay_time);
+    delay(10);
     clear();
   }
 }
@@ -64,11 +63,11 @@ void set(int b){
     PORTD &= ~(1 << CLK);
   }
   PORTD |= 1 << EN;
-  delay(1);
+  //delay(1);
   PORTD &= ~(1 << EN);
-  delay(1);
+  //delay(1);
   PORTD &= ~(1 << RST);
-  delay(1);
+  //delay(1);
   PORTD |= 1 << RST;
 }
 
